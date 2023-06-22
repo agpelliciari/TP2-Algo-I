@@ -122,7 +122,7 @@ def opcion_2():
 
     response = requests.request("GET", url, headers=headers)
     #response.txt es toda la respuesta en texto
-    # Pasar de json a dicc de python
+    #Pasar de json a dicc de python
 
     stri_json = response.text
     diccionario_equipos = json.loads(stri_json)
@@ -157,7 +157,7 @@ def opcion_2():
     for response_2 in diccionario_jugadores["response"]:
         for player  in response_2:
             if player == "player":
-                print('-',response_2[player]["firstname"],response_2[player]["lastname"] )
+                print('-',response_2[player]["firstname"],response_2[player]["lastname"])
 def opcion_5()->None:
     #DESDE ACA HASTA EL SEGUNDO URL SE PUEDE PONER COMO OTRA FUNCION YA QUE SIRVE PARA EL PUNTO DOS Y EL CINCO
     url= "https://v3.football.api-sports.io/teams?league=128&season=2023"
@@ -208,8 +208,6 @@ def opcion_5()->None:
                     data[minutes]=0
     names=list(data.keys())
     values=list(data.values())
-    print(names)
-    print(values)
     fig, axs = plt.subplots(1, 1, figsize=(9, 3), sharey=True)
     axs.bar(names,values)
     fig.suptitle('Goles por Minutos Jugados')
