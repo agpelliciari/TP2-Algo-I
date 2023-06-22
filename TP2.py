@@ -159,6 +159,363 @@ def opcion_2():
         for player  in response_2:
             if player == "player":
                 print('-',response_2[player]["firstname"],response_2[player]["lastname"])
+		
+
+def obtener_diccionario_tablas(anio):
+    """
+
+    PRECONDICION: Solicita a la API info. sobre la temporada elegida por el usuario.
+    POSTCONDICION: Devuelve un diccionario con la info. sobre la temporada elegida por el usuario.
+
+    """
+
+    url = f"https://v3.football.api-sports.io/standings?league=128&season={anio}"
+
+    payload = {}
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
+        }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    stri_json = response.text                    
+    diccionario_tablas = json.loads(stri_json)         # Pasar de Json a python
+
+    return diccionario_tablas
+
+def opcion_3():
+    """
+
+    PRECONDICION: Pide al usuario que ingrese una temporada para consultar la tabla de posiciones.
+    POSTCONDICION: Imprime los datos solicitados por el usuario
+    
+    """
+
+    anio = input("Ingrese una temporada (2015-2023) para consultar su tabla de posiciones: ")
+    while valor_invalido(anio, ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023']) :
+        anio = input("La temporada ingresada es invalida. Ingrese nuevamente la temporada: ")
+    anio = int(anio)
+ 
+    diccionario_tablas = obtener_diccionario_tablas(anio)
+
+    datos_liga = diccionario_tablas['response'][0] 
+    posiciones = datos_liga['league']['standings'][0]
+
+    print(f"----Tabla de posiciones LPF Argentina {anio}")
+
+    if (anio == 2015) or (anio == 2016) or (anio == 2017) or (anio == 2018) or (anio == 2019): 
+        
+        mostrar_tabla_quince_to_diecinueve(anio, posiciones)
+    
+    elif (anio == 2020): 
+        
+        mostrar_tabla_veinte(anio, datos_liga)
+
+    elif (anio == 2021) or (anio == 2022): 
+        
+        mostrar_tabla_veinti_uno_dos(anio, datos_liga)
+
+    elif (anio == 2023):
+        
+       mostrar_tabla_veinti_tres(anio, datos_liga)
+
+def mostrar_tabla_quince_to_diecinueve(anio:int, posiciones:dict):
+
+    for i in posiciones:
+            puesto = i['rank']
+            equipo = i['team']['name']
+            puntos = i['points']
+            jugados = i['all']['played']
+            ganados = i['all']['win']
+            empatados = i['all']['draw']
+            perdidos = i['all']['lose']
+
+            print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+def mostrar_tabla_veinti_uno_dos(anio:int, datos_liga:dict):
+
+    posiciones_mostrar_primera_fase = datos_liga['league']['standings'][1]
+    posiciones_segunda_fase = datos_liga['league']['standings'][0]
+        
+    print("Primera Fase")
+    for i in posiciones_mostrar_primera_fase:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+        
+    print()
+    print("Segunda Fase")
+    for i in posiciones_segunda_fase:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+def mostrar_tabla_veinti_tres(anio:int, datos_liga:dict):
+
+    posiciones_mostrar_primera_fase = datos_liga['league']['standings'][1]
+    for i in posiciones_mostrar_primera_fase:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+    print()
+    print(f"La segunda fase de la temporada {anio} todavia no se jugo.")
+
+def mostrar_tabla_veinte(anio: int, datos_liga:dict):
+
+    grupo_uno = datos_liga['league']['standings'][4]
+    grupo_dos = datos_liga['league']['standings'][5]
+    grupo_tres = datos_liga['league']['standings'][6]
+    grupo_cuatro = datos_liga['league']['standings'][7]
+    grupo_cinco = datos_liga['league']['standings'][8]
+    grupo_seis = datos_liga['league']['standings'][9]
+    grupo_a_ganadores = datos_liga['league']['standings'][0]
+    grupo_b_ganadores = datos_liga['league']['standings'][1]
+    grupo_a_perdedores = datos_liga['league']['standings'][2]
+    grupo_b_perdedores = datos_liga['league']['standings'][3]
+
+    mostrar_primera_fase(grupo_uno, grupo_dos, grupo_tres, grupo_cuatro, grupo_cinco, grupo_seis)
+    print()
+    mostrar_segunda_fase(grupo_a_ganadores, grupo_b_ganadores, grupo_a_perdedores, grupo_b_perdedores)
+    
+def mostrar_primera_fase(grupo_uno:list, grupo_dos:list, grupo_tres:list, grupo_cuatro:list, grupo_cinco:list, grupo_seis:list):
+
+    print("Primera fase")
+    print("Grupo 1")
+    for i in grupo_uno:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+    
+    print()
+    print("Grupo 2")
+    for i in grupo_dos:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo 3")
+    for i in grupo_tres:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo 4")
+    for i in grupo_cuatro:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo 5")
+    for i in grupo_cinco:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo 6")
+    for i in grupo_seis:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+def mostrar_segunda_fase(grupo_a_ganadores:list, grupo_b_ganadores:list, grupo_a_perdedores:list, grupo_b_perdedores:list):
+
+    print("Segunda fase")
+    print("Grupo A - Ganadores")
+    for i in grupo_a_ganadores:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo B - Ganadores")
+    for i in grupo_b_ganadores:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo A - Perdedores")
+    for i in grupo_a_perdedores:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+    print()
+    print("Grupo B - Perdedores")
+    for i in grupo_b_perdedores:
+        puesto = i['rank']
+        equipo = i['team']['name']
+        puntos = i['points']
+        jugados = i['all']['played']
+        ganados = i['all']['win']
+        empatados = i['all']['draw']
+        perdidos = i['all']['lose']
+        
+        print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
+
+
+def obtener_diccionario_equipos():
+    """
+
+    PRECONDICION: Solicita a la API info. de los equipos que participan de la LPF 2023.
+    POSTCONDICION: Devuelve un diccionario con la info. de los equipos que participan de la LPF 2023.
+
+    """
+    
+    url = "https://v3.football.api-sports.io/teams?league=128&season=2023"
+
+    payload = {}
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
+        }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+
+    stri_json = response.text
+    diccionario_equipos = json.loads(stri_json)  # Pasar de json a dicc de python
+
+    return diccionario_equipos
+
+def opcion_4():
+   """
+
+   PRECONDICION: Pide al usuario que elija un equipo de la lista.
+   POSTCONDICION: Muestra los datos del estadio y el escudo de ese equipo.
+   
+   """
+
+   diccionario_equipos = obtener_diccionario_equipos()
+
+   datos_equipos = diccionario_equipos['response']
+   
+   mostrar_equipos(datos_equipos)
+
+   eleccion = input("Elija un equipo del listado de equipos: ")
+   while valor_invalido(eleccion, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28']) :
+      eleccion = input("La eleccion ingresada es invalida. Ingrese nuevamente la eleccion del equipo: ")
+   eleccion = int(eleccion)
+
+   choice = datos_equipos[eleccion - 1]
+   nombre = choice['team']['name']
+   print()
+   print(nombre)
+
+   mostrar_datos_estadio(choice)
+   
+   mostrar_escudo(choice)
+   
+def mostrar_datos_estadio(choice:dict):
+   
+   datos_estadio = choice['venue']
+   nombre = datos_estadio['name']
+   direccion = datos_estadio['address']
+   ciudad = datos_estadio['city']
+   capacidad = datos_estadio['capacity']
+   logo = datos_estadio['image']
+
+   response = requests.get(logo)
+   img = Image.open(BytesIO(response.content))
+   img.show()
+   
+   print(f"El {nombre} esta ubicado en la calle {direccion} de la ciudad de {ciudad}. Tiene una capacidad para {capacidad} personas.")
+
+def mostrar_escudo(choice:dict):
+   
+   escudo = choice['team']['logo']
+   response = requests.get(escudo)
+   img = Image.open(BytesIO(response.content))
+   img.show()
+
+def mostrar_equipos(datos_equipos:dict):
+   
+   print("---Estos son los equipos que participan en la temporada 2023 de LPF Argentina.")
+   
+   contador = 0
+   
+   for i in datos_equipos:
+    contador +=1
+    equipo = i['team']['name']
+    
+    print(f"{contador}) {equipo}")
+
+
 def opcion_5()->None:
     #DESDE ACA HASTA EL SEGUNDO URL SE PUEDE PONER COMO OTRA FUNCION YA QUE SIRVE PARA EL PUNTO DOS Y EL CINCO
     url= "https://v3.football.api-sports.io/teams?league=128&season=2023"
@@ -235,7 +592,7 @@ def seleccionar_opcion():
 
     opcion = input("Ingrese una opcion: ")
 
-    while valor_invalido(opcion, ['a', 'b', 'c', 'd', 'e', 'f', 'g']):
+    while valor_invalido(opcion, ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']):
         opcion = input(f"La opcion {opcion} es invalida. Por favor, seleccione una opcion valida: ")
 
     return opcion
@@ -252,24 +609,32 @@ def main():
 	if(registrado):
 	
 		print("ACONTINUACION SE LE MOSTRARA UN MENU DE OPCIONES PARA EL USO DE SU CUENTA. ")
-		menu()
 		
 		opcion = seleccionar_opcion()
 		
 		while opcion != 'i':
-			if opcion== 'a':
-				opcion_2()
-			elif opcion== 'd' : 
-				opcion_5()
-			elif opcion == 'e':
-				leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
-				opcion_6(id_usuario, leer_dinero, ARCHIVO, usuarios)
-			elif opcion == 'f':
-				opcion_7(ARCHIVO, usuarios)
-
-			opcion = seleccionar_opcion()
-
-	guardar_usuario(usuarios, ARCHIVO)
+                     
+                     if opcion == 'a':
+                          opcion_2()
+                     
+                     elif opcion == 'b':
+                          opcion_3()
+                     
+                     elif opcion == 'c':
+                          opcion_4()
+                     
+                     elif opcion == 'd':
+                          opcion_5()
+                     
+                     elif opcion == 'e':
+                          leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
+                          opcion_6(id_usuario, leer_dinero, ARCHIVO, usuarios)
+                     
+                     elif opcion == 'f':
+                          opcion_7(ARCHIVO, usuarios)
+                     
+                     opcion = seleccionar_opcion()
+        guardar_usuario(ARCHIVO, usuarios)
 		
 main()
 
