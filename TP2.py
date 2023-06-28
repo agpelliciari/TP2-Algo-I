@@ -1,4 +1,5 @@
 import requests
+import http.client
 import json
 import random
 import csv
@@ -7,14 +8,39 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from io import BytesIO
 from passlib.hash import pbkdf2_sha256
+from datetime import datetime
 
 ARCHIVO = "usuarios.csv"
+ARCHIVO2 = "transacciones.csv"
+
+NO_REGISTRADO = 3
+REGISTRADO = 1
+CONTRASENIA_INCORRECTA = 2
+
+EQUIPO_LOCAL = 'L'
+EQUIPO_VISITANTE = 'V'
+
+PAGO_APUESTA_MIN = 2
+PAGO_APUESTA_MAX = 5
+
+TIRADA_DADO_MIN = 1
+TIRADA_DADO_MAX = 4
+
+
 
 
 
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
+
 def cargar_usuarios(archivo):
+    """
+
+    PRECONDICION: Se recibe un archivo.csv
+    POSTCONDICION: Devuelve una lista en caso de que el archivo no este vacio, de lo contrario devolvera -1
+    
+    """
+
     usuarios = []
     directorio = os.getcwd()
     ruta_del_archivo = os.path.join(directorio, archivo)
@@ -28,55 +54,112 @@ def cargar_usuarios(archivo):
 
     return usuarios
 
+def cargar_transacciones(archivo):
+    """
+    
+    PRECONDICION: Se recibe un archivo.csv
+    POSTCONDICION: Devuelve una lista en caso de que el archivo no este vacio, de lo contrario devolvera -1
+    
+    """
+        
+    transacciones = []
+    directorio = os.getcwd()
+    ruta_del_archivo = os.path.join(directorio, archivo)
+    if not os.path.exists(ruta_del_archivo):
+        return transacciones 
+    with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
+        csv_reader = csv.reader(archivo_csv, delimiter=',')
+        encabezado = next(csv_reader)
+        for row in csv_reader:
+            transacciones.append(row)
+                    
+    return transacciones
+
 def pedir_busqueda():
-    id_usuario = input("INGRESE USUARIO: ")
-    contrasenia = input("INGRESE CONTRASENIA: ")
+    """
+
+    PRECONDICION: Se le pide al usuario que ingrese usuario y contraseña.
+    POSTCONDICION: Devuelve los dos valores ingresados por el usuario.
+    
+    """
+
+    id_usuario = input("INGRESE USUARIO (MAIL): ")
+    contrasenia = input("INGRESE CONTRASEÑA: ")
+    
     return id_usuario, contrasenia
 
 def encriptacion(contrasenia):
+    """
+
+    PRECONDICION: Se recibe el valor valido
+    POSTCONDICION: Devuelve el valor encriptado
+ 
+    """
+
     hash = pbkdf2_sha256.hash(contrasenia)
 
     return hash
 
 
 def buscar(id_usuario, usuarios, contrasenia):
-    buscado = 3
+    """
+     
+    PRECONDICION: Se reciben datos leidos por consola
+    POSTCONDICION: Devolvera un numero dependiendo si estan o no en la lista usuarios, 1: registrado, 3: no registrado, 2: si la contraseña es incorrecta
+    
+    """
+
+    buscado = NO_REGISTRADO
 
     for fila in usuarios:
-
-        if((id_usuario == fila[0]) and (pbkdf2_sha256.verify(contrasenia, fila[2]))):
-            buscado = 1
-        else:
-            if(id_usuario == fila[0]): 
-                buscado = 2
-
+        if(len(fila) > 0):
+            if((id_usuario == fila[0]) and (pbkdf2_sha256.verify(contrasenia, fila[2]))):
+                buscado = REGISTRADO
+            else:
+                if(id_usuario == fila[0]): 
+                    buscado = CONTRASENIA_INCORRECTA
+		
     return buscado
 
 def registrar_usuario(id_usuario, contrasenia, usuarios):
+    """
+    
+    PRECONDICION: Se reciben datos leidos por consola
+    POSTCONDICION: Devuelve true si se pudo registrar de lo contrario devuelve false y se le mostrara mensajes al usuario para un control de su registro
+    
+    """
+
     registrado = False
 
     buscado = buscar(id_usuario, usuarios, contrasenia)
 
     while(buscado != 0):
 
-        if(buscado == 1):
+        if(buscado == REGISTRADO):
             print("Usted se encuentra registrado \n")
-
+            
             registrado = True
             buscado = 0
 
-        elif(buscado == 2):
-            while(buscado == 2):
+        elif(buscado == CONTRASENIA_INCORRECTA):
+            while(buscado == CONTRASENIA_INCORRECTA):
                 print("LA CONTRASEÑA ES INCORRECTA")
-                contrasenia = input("INGRESE NUEVAMENTE LA CONTRASEÑA: ")
-		
-                buscado = buscar(id_usuario, usuarios, contrasenia)
+                confirmacion = input("DESEA SALIR? (si/no): ")
+                while (confirmacion.lower() != "si") and (confirmacion.lower() != "no"):
+                    confirmacion = input("INGRESE NUEVAMENTE LA RESPUESTA. DESEA SALIR? (si/no): ")
+                
+                if (confirmacion.lower() == "no"):
+                    contrasenia = input("INGRESE NUEVAMENTE LA CONTRASEÑA: ")
+                    buscado = buscar(id_usuario, usuarios, contrasenia)
+                else:
+                    return None
+                
         else:
-            print("No se encuentra registrado")
-            respuesta = input("DESEA REGISTRARSE [S/N]: ")
-            if(respuesta.lower() != "s"):
-                registrado = False
-  
+            print("NO SE ENCUENTRA REGISTRADO")
+            respuesta = input("DESEA REGISTRARSE [si/no]: ")
+            if(respuesta.lower() != "si"):
+                return None
+
             cantidad_apostada = "0"
             fecha_apostada = "0000/00/00"
             dinero_disponible = "0"
@@ -93,13 +176,20 @@ def registrar_usuario(id_usuario, contrasenia, usuarios):
     return registrado
 
 def guardar_usuario(usuarios, archivo):
+    """
+
+    PRECONDICION: Se recibe una lista de usuarios cargada
+    POSTCONDICION: Se crea un archivo cargado con la lista de usuarios
+     
+    """
+
     with open(archivo, 'w', newline='', encoding="UTF-8") as archivo_csv:
         csv_writer = csv.writer(archivo_csv, delimiter=',',quotechar='"', quoting= csv.QUOTE_NONNUMERIC)
         csv_writer.writerow(["ID", "Nombre Usuario", "Contraseña", "Cantidad Apostada", "Fecha Ultima Apuesta", "Dinero Disponible"])
         csv_writer.writerows(usuarios)
 
 def menu():
-	
+
     print("---------------MENU DE OPCIONES-----------------------------")
     print("(a) SE LE MUESTRA EL PLANTEL COMPLETO DE TODOS LOS EQUIPOS DE LPF ARGENTINA 2023")
     print("(b) SE LE MUESTRA LA TABLA DE POSICIONES DEL AÑO QUE ELIJA DE LPF ARGENTINA")
@@ -110,6 +200,7 @@ def menu():
     print("(g) SE LE MUESTRA EL USUARIO QUE MAS GANO HASTA EL MOMENTO")
     print("(h) APOSTAR")
     print("(i) SALIR DEL PROGRAMA")
+
 def Imprimir_equipos_de_la_liga():
     """
 
@@ -122,7 +213,7 @@ def Imprimir_equipos_de_la_liga():
     payload = {}
     headers = {
         'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "ce6d1b3840dfa8ebcb068e3174297234"
+        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
         }
     response = requests.request("GET", url, headers=headers)
     stri_json = response.text
@@ -132,9 +223,10 @@ def Imprimir_equipos_de_la_liga():
     for response in diccionario_equipos["response"]:
         for team in response :
             if team == "team":
-                diccionario_equipos_y_id[response[team]["name"]]=response[team]["id"]
+                diccionario_equipos_y_id[(response[team]["name"]).capitalize()]=response[team]["id"]
                 print(response[team]["name"]) 
     return diccionario_equipos_y_id
+
 def opcion_2():
     """
 
@@ -144,7 +236,7 @@ def opcion_2():
     """
     diccionario_equipos_y_id=Imprimir_equipos_de_la_liga()
     equipo_ingresado_por_usuario= input('Ingrese el nombre del equipo para ver su plantel:  ').capitalize()
-
+    
     while equipo_ingresado_por_usuario not in diccionario_equipos_y_id:
         print('Ese equipo no esta en esta liga o no existe: ')
         equipo_ingresado_por_usuario= input('Ingrese el nombre del equipo para ver su plantel:  ').capitalize()
@@ -155,7 +247,7 @@ def opcion_2():
     payload = {}
     headers = {
         'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "ce6d1b3840dfa8ebcb068e3174297234"
+        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
         }
 
     response_2 = requests.request("GET", url, headers=headers)
@@ -506,7 +598,7 @@ def mostrar_equipos(datos_equipos:dict):
         contador +=1
         equipo = i['team']['name']
 
-    print(f"{contador}) {equipo}")
+        print(f"{contador}) {equipo}")
 
 
 def opcion_5()->None:
@@ -528,7 +620,7 @@ def opcion_5()->None:
     payload = {}    
     headers = {
         'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "ce6d1b3840dfa8ebcb068e3174297234"
+        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
             }
     
     response = requests.request("GET", url, headers=headers)
@@ -548,21 +640,499 @@ def opcion_5()->None:
     fig.suptitle('Goles por Minutos Jugados')
     plt.show()
 
-def opcion_6(id_usuario, leer_dinero, archivo, usuarios):
+def validar_fecha(fecha_str):
+    """
+ 
+    PRECONDICION: Se recibe una fecha en cadena con formato YYYY-MM-DD
+    POSTCONDICION: Devuelve true si es la fecha es igual a la fecha actual de lo contrario devuelve false
+ 
+    """
+    try:
+        datetime.strptime(fecha_str, '%Y-%m-%d')
+        return True
+    except ValueError:
+        return False
+
+def opcion_6(id_usuario:str, leer_dinero:int, usuarios:list, transacciones:list)->list:
+    """
+    PRECONDICION: 
+    POSTCONDICION: Se cargara una lista con campos validos a la lista transacciones
+    """
+    linea = []
+    fecha_actaul=datetime.now()
+    fecha_actaul1=datetime.strftime(fecha_actaul,'%Y-%m-%d')
+    fecha = input("Ingrese una fecha en formato YYYY-MM-DD: ")
+    while not validar_fecha(fecha) or fecha != fecha_actaul1:
+        print("Fecha no válida. Intente nuevamente.")
+        fecha = input("Ingrese una fecha en formato YYYY-MM-DD: ")
+
     for fila in usuarios:
+
         if(id_usuario == fila[0]):
             fila[5] = str(int(fila[5]) + leer_dinero)
             print("SE AGREGO DINERO A SU CUENTA CON EXITO")
             print(f"SU DINERO DISPONIBLE HASTA EL MOMENTO ES {fila[5]}")
+            tipo_resultado = "deposita" 
+            importe = leer_dinero
 
-def opcion_7(archivo, usuarios):
+            linea.append(id_usuario)
+            linea.append(fecha)
+            linea.append(tipo_resultado)
+            linea.append(importe)
+    transacciones.append(linea)
+
+def opcion_7(usuarios:list)->None:
+    """
+     
+    PRECONDICION: Se recibe una lista con datos validos
+    POSTCONDICION: Se muestra por pantalla el usuario que mas dinero aposto
+    
+    """
     max_apostado = -1
     for fila in usuarios:
         if(int(fila[3]) > max_apostado):
             max_apostado = int(fila[3])
+    if(max_apostado == 0):
+        print("NO HAY INFORMACION, PORQUE AUN NADIE APOSTO")
+    elif(max_apostado > 0):
+        for fila in usuarios:
+            if(int(fila[3]) == max_apostado):
+                print(f"EL USUARIO {fila[1]} CON LA CANTIDAD DE ${max_apostado} ES EL QUE MAS DINERO APOSTO HASTA EL MOMENTO")
+
+
+def opcion_8(transacciones:list, usuarios:list):
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: se mostrara informacion del usuario que mas veces gano
+    
+    """
+    apuestas_usuarios = {}
+    acumulador_veces_ganadas = 1
+    mayor_cant_veces_ganadas = 0
+    id_usuario_mayor_cant_veces_ganadas = "x"
+
+    for fila in transacciones:
+        if(len(fila) > 0):
+            if((fila[2] == "Pierde") or (fila[2] == "deposita")):
+                print("AUN NO HAY GANADORES")
+            else:
+                if((fila[2] == "Gana") and (fila[0] not in apuestas_usuarios)):
+                    apuestas_usuarios[fila[0]] = [acumulador_veces_ganadas]
+                else:
+                    if((fila[2] == "Gana") and (fila[0] in apuestas_usuarios)):
+                        apuestas_usuarios[fila[0]] = [int(" ".join(map(str,apuestas_usuarios[fila[0]]))) + acumulador_veces_ganadas]
+
+    for usuario in apuestas_usuarios:
+        str_apuestas = (" ".join(map(str, apuestas_usuarios[usuario])))
+        if(int(str_apuestas) > mayor_cant_veces_ganadas):
+            mayor_cant_veces_ganadas = int(str_apuestas)
+            id_usuario_mayor_cant_veces_ganadas = usuario
+
     for fila in usuarios:
-        if(int(fila[3]) == max_apostado):
-            print(f"EL USUARIO {fila[1]} CON LA CANTIDAD DE ${max_apostado} ES EL QUE MAS DINERO APOSTO HASTA EL MOMENTO")
+        if(fila[0] == id_usuario_mayor_cant_veces_ganadas):
+            print(f"EL USUARIO QUE MAS VECES APOSTO HASTA EL MOMENTO ES {fila[1]} CON LA CANTIDAD DE {mayor_cant_veces_ganadas} APUESTAS")
+
+    if(len(transacciones) == 0):
+        print("AUN NO HAY GANADORES")
+                
+def lee_informacion(url):
+
+    conn = http.client.HTTPSConnection("v3.football.api-sports.io")
+
+    headers = {
+        'x-rapidapi-host': "v3.football.api-sports.io",
+        'x-rapidapi-key': "4f195fbb113f91fc46340162f872b960"
+        }
+
+    conn.request("GET", url, headers=headers)
+
+    res = conn.getresponse()
+    data = res.read()
+    data = json.loads(data.decode("utf-8"))
+    return data
+
+def cargando_equipos():
+    """
+
+    PRECONDICION: -----------------------------
+    POSTCONDICION: devolvera un diccionario con los equipos
+
+    """
+    url = ("/teams?league=128&season=2023")
+    data = lee_informacion(url)
+  
+    equipos = {}
+    cantidad_equipos = data['results']
+
+    for resultado in range(cantidad_equipos):
+        nombre_equipo = (data['response'][resultado]['team']['name'])
+        id_equipo = (data['response'][resultado]['team']['id'])
+
+        equipos[id_equipo] = nombre_equipo
+    
+    return equipos
+
+
+def mostrar_equipos_id(equipos:dict):
+    """
+
+    PRECONDICION: recibe un diccionario cargado con datos validos.
+    POSTCONDICION: Se imprimira por pantalla informacion deL diccionario.
+
+    """
+    for id_equipo, nombre_equipo in equipos.items():
+        print(f"ID {id_equipo} - {nombre_equipo} ")
+
+def jugada(local_o_visitante):
+    """
+
+    PRECONDICION: recibe como valor una cadena 'home' o 'away'
+    POSTCONDICION: Se imprimira 'L' si es local o 'V'  si es visitante
+
+    """
+    if('home' in local_o_visitante):
+            local_o_visitante = EQUIPO_LOCAL
+    else:
+        if('away' in local_o_visitante):
+            local_o_visitante = EQUIPO_VISITANTE
+    return local_o_visitante
+
+def cargar_fixture(leer_equipo):
+    """
+
+    PRECONDICION: recibe por paramentro un numero entero positivo.
+    POSTCONDICION: devolvera un diccionario con los fixtures.
+
+    """
+    fixtures = {}
+    url =  (f"/fixtures?league=128&season=2023&team={leer_equipo}")
+    data = lee_informacion(url)
+
+
+    cantidad_fixture = data['results']
+    for resultado in range(cantidad_fixture):
+        id_fixture = (data['response'][resultado]['fixture']['id'])
+        fecha = (data['response'][resultado]['fixture']['date'])
+        estadio = (data['response'][resultado]['fixture']['venue']['name'])
+        local = (data['response'][resultado]['teams']['home']['name'])
+        local_o_visitante1 = (list((data['response'][resultado]['teams']).keys())[0])
+        local_o_visitante1 = jugada(local_o_visitante1)
+        visitante = (data['response'][resultado]['teams']['away']['name'])
+        local_o_visitante2 = (list((data['response'][resultado]['teams']).keys())[1])
+        local_o_visitante2 = jugada(local_o_visitante2)
+        fixtures[id_fixture] = [(local_o_visitante1, local), (local_o_visitante2, visitante), fecha, estadio]
+
+    return fixtures
+
+def mostrar_fixtures(fixtures):
+    """
+
+    PRECONDICION: recibe por parametro un diccionario con datos validos.
+    POSTCONDICION: mostrara informacion del diccionario.
+
+    """
+    for id_fixture in fixtures:
+        print(f"ID: {id_fixture} - ({fixtures[id_fixture][0][0]}) {fixtures[id_fixture][0][1]} vs ({fixtures[id_fixture][1][0]}) {fixtures[id_fixture][1][1]} - {fixtures[id_fixture][2]} - {fixtures[id_fixture][3]}")
+
+def pago_x_apuesta():
+    """
+
+    PRECONDICION: ----------------------
+    POSTCONDICION: Devuelve un valor asignado de forma aleaatoria
+
+    """
+    cant_pago_x_apuestas = random.randrange(PAGO_APUESTA_MIN,PAGO_APUESTA_MAX)
+    return cant_pago_x_apuestas
+
+def importe_apuesta(id_fixture:int, fixtures:dict, cant_pago_x_apuestas:int, ganador:str, monto_a_apostar:int):
+    """
+
+    PRECONDICION: recibe por parametro valores validos
+    POSTCONDICION: devuelve un numero positivo, resultado de lo que paga por fixture
+
+    """
+    url = (f"/predictions?fixture={id_fixture}")
+    data = lee_informacion(url)
+
+    w_o_d = (data['response'][0]['predictions']['win_or_draw'])
+
+    ganador_x_api = (data['response'][0]['predictions']['winner']['name'])
+
+    pago_x_apuestas_wod = cant_pago_x_apuestas * 0.1
+    equipo1 = fixtures[id_fixture][0]
+
+    equipo2 = fixtures[id_fixture][1]
+
+    
+
+    if((ganador_x_api == equipo1[1]) and (equipo1[0] in ganador) and (w_o_d)):
+        importe = pago_x_apuestas_wod * monto_a_apostar
+    
+    elif((ganador_x_api == equipo2[1]) and (equipo2[0] in ganador) and (w_o_d)):
+        importe = pago_x_apuestas_wod * monto_a_apostar
+
+    elif((ganador_x_api == equipo1[1]) and (equipo1[0] in ganador) and (not(w_o_d))):
+        importe = cant_pago_x_apuestas * monto_a_apostar
+ 
+    elif((ganador_x_api == equipo2[1]) and (equipo2[0] in ganador) and (not(w_o_d))):
+        importe = cant_pago_x_apuestas * monto_a_apostar
+    
+    elif((ganador_x_api != equipo1[1]) and (equipo1[0] in ganador) and (w_o_d)):
+        importe = cant_pago_x_apuestas * monto_a_apostar
+
+    elif((ganador_x_api != equipo2[1]) and (equipo2[0] in ganador) and (w_o_d)):
+        importe = cant_pago_x_apuestas * monto_a_apostar
+
+    elif((ganador_x_api != equipo1[1]) and (equipo1[0] in ganador) and (not(w_o_d))):
+        importe = pago_x_apuestas_wod * monto_a_apostar
+
+    elif((ganador_x_api != equipo2[1]) and (equipo2[0] in ganador) and (not(w_o_d))):
+        importe = pago_x_apuestas_wod * monto_a_apostar
+
+    elif(ganador == "EMPATE"):
+        importe = monto_a_apostar * 0.5
+ 
+    return importe
+
+def mostrar_pago_x_equipo(id_fixture:int, fixtures:dict, cant_pago_x_apuestas:int):
+    """
+
+    PRECONDICION: Se recibe id_fixtures y cant_pago_x_apuestas valores enteros positivos
+    POSTCONDICION: mostrara informacion de lo que se paga en caso de ganar o empatar
+
+    """
+    url = (f"/predictions?fixture={id_fixture}")
+    data = lee_informacion(url)
+
+    w_o_d = (data['response'][0]['predictions']['win_or_draw'])
+    ganador_x_api = (data['response'][0]['predictions']['winner']['name'])
+    
+    pago_x_apuestas_wod = cant_pago_x_apuestas * 0.1
+    equipo1 = fixtures[id_fixture][0]
+
+    equipo2 = fixtures[id_fixture][1]
+
+    if((ganador_x_api == equipo1[1]) and (equipo1[0] == 'L') and (w_o_d)):
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {pago_x_apuestas_wod}  VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo2[1]) and (equipo2[0] == 'L') and (w_o_d)):
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {cant_pago_x_apuestas}  VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo1[1]) and (equipo1[0] == 'V') and (w_o_d)):
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {pago_x_apuestas_wod}  VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo2[1]) and (equipo2[0] == 'V') and (w_o_d)):
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {cant_pago_x_apuestas}  VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo1[1]) and (equipo1[0] == 'L') and (not(w_o_d))):
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo2[1]) and (equipo2[0] == 'L') and (not(w_o_d))):
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo1[1]) and (equipo1[0] == 'V') and (not(w_o_d))):
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+
+    if((ganador_x_api == equipo2[1]) and (equipo2[0] == 'V') and (not(w_o_d))):
+        print(f"SI APUESTA POR {equipo2[1]} GANADOR  => PAGA {cant_pago_x_apuestas} VECES LO APOSTADO")
+        print(f"SI APUESTA POR {equipo1[1]} GANADOR  => PAGA {pago_x_apuestas_wod} VECES LO APOSTADO")
+
+    print("SI APUESTA POR EMPATE PAGA 0.5 VECES LO APOSTADO") 
+            
+def simular_partido():
+    """
+
+    PRECONDICION: ---------------
+    POSTCONDICION: Devolvera una cadena GANADOR(L):en caso de que gane el equipo local, GANADOR(V):en caso de que gane visitante y EMPATE: si el partido termina en empate
+
+    """
+    resultado_apuesta = random.randrange(TIRADA_DADO_MIN,TIRADA_DADO_MAX)
+    if(resultado_apuesta == 1):
+        ganador = "GANADOR(L)"
+    elif(resultado_apuesta == 2):
+        ganador = "EMPATE"
+    else:
+        if(resultado_apuesta == 3):
+            ganador = "GANADOR(V)"
+    return ganador
+
+def guardar_transacciones(transacciones:list, archivo2):
+    """
+    
+    PRECONDICION: recibe por parametro una lista
+    POSTCONDICION: Guarda lista transacciones en un archivo2
+    
+    """
+    with open(archivo2, 'w', newline='', encoding="UTF-8") as archivo_csv:
+        csv_writer = csv.writer(archivo_csv, delimiter=',',quotechar='"', quoting= csv.QUOTE_NONNUMERIC)
+        csv_writer.writerow(["ID", "Fecha Transaccion", "Tipo resultado", "Importe"])
+        csv_writer.writerows(transacciones) #linea tiene que ser una lista
+
+def cantidad_apostada_hasta_el_momento(id_usuario:str, usuarios:list, monto_a_apostar:int)->None:
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: modifica la cantidad apostada (posicion 3 de la lista de usuarios)
+    
+    """
+    for fila in usuarios:
+        if(id_usuario == fila[0]):
+            fila[3] = str(int(fila[3]) + monto_a_apostar)
+
+def fecha_ultima_apuesta(id_usuario:str, usuarios, fecha:str):
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: modifica la fecha
+    
+    """
+    for fila in usuarios:
+        if(id_usuario == fila[0]):
+            fila[4] = fecha
+                
+def validar_monto(id_usuario:str, usuarios:list, monto_a_apostar:int)->bool:
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: devuelve true si el dinero a apostar es mayor o igual al dinero disponible de lo contrario false
+    
+    """
+    monto_superado = False
+    for fila in usuarios:
+        if(id_usuario == fila[0]):
+            if(monto_a_apostar > int(float(fila[5]))):
+                monto_superado = True
+                print(f"SU DINERO DISPONIBLE ES {fila[5]}")
+    return monto_superado
+
+def mostrar_ganador(equipo_ganador:str)->None:
+    """
+    
+    PRECONDICION: Recibe por parametro una cadena con datos validos
+    POSTCONDICION: muestra el resultado del partido
+    
+    """
+    if(EQUIPO_VISITANTE in equipo_ganador):
+        print("GANO EL EQUIPO VISITANTE")
+    elif(EQUIPO_LOCAL in equipo_ganador):
+        print("GANO EL EQUIPO LOCAL")
+    else:
+        print("EL PARTIDO TERMINO EN UN EMPATE")
+
+def aumento_importe(id_usuario:str, usuarios:list, importe:int, monto_a_apostar:int): 
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: aumenta su dinero disponible y lo muestra por pantalla
+    
+    """
+    for fila in usuarios:
+        if(id_usuario == fila[0]):
+            fila[5] = str(int(float(fila[5])) - int(monto_a_apostar) + (int(importe))) 
+            print(f"SU DINERO DISPONIBLE ES {fila[5]}")
+
+def disminucion_importe(id_usuario:str, usuarios:list, importe):
+    """
+    
+    PRECONDICION: 
+    POSTCONDICION: disminuye su dinero disponible y lo muestra por pantalla
+    
+    """
+    for fila in usuarios:
+        if(id_usuario == fila[0]):
+            fila[5] = str(int(float(fila[5])) + int(importe))
+            print(f"SU DINERO DISPONIBLE ES {fila[5]}")
+
+def validar_apuesta(apuesta):
+    """
+    
+    PRECONDICION: el valor ingresado tiene que ser una cadena
+    POSTCONDICION: Devuelve true si el valor recibido por parametro coincide con  uno de los valores compradados, de lo contrario devolvera false
+    
+    """
+    apuesta_valida = False
+    if((apuesta == "GANADOR(L)") or (apuesta == "GANADOR(V)") or (apuesta == "EMPATE")):
+        apuesta_valida = True
+    return apuesta_valida
+            
+def opcion_9(usuarios, id_usuario, transacciones):
+    """
+
+    PRECONDICION: se recibe el id_usuario como una cadena valida, una lista de usuarios y una lista de transacciones
+    POSTCONDICION: se cargara la lista de transacciones con datos validos
+
+    """
+    linea = []
+    print("SE LE MOSTRARA PREVIAMENTE UNA LISTA CON LOS EQUIPOS")
+    print("DE LA LIGA PROFESIONAL CORRESPONDIENTE A LA TEMPORADA 2023 CON SUS RESPECTIVOS 'ID' ")
+    equipos = cargando_equipos()
+    mostrar_equipos_id(equipos)
+    leer_equipo = input("INGRESE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
+    while(int(leer_equipo)  not in equipos):
+        leer_equipo = input("INGRESE NUEVAMENTE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
+
+    fixtures = cargar_fixture(leer_equipo)
+    mostrar_fixtures(fixtures)
+    cant_pago_x_apuestas = pago_x_apuesta()
+    importe = 0 
+    respuesta = "si"
+
+    while respuesta.lower() == "si":
+        id_fixture = int(input("INGRESE EL ID DEL FIXTURE PARA MOSTRARLE LO QUE PAGA: "))
+        mostrar_pago_x_equipo(id_fixture, fixtures, cant_pago_x_apuestas)
+        respuesta = input("INGRESE 'si' SI DESEA VER CUANTO PAGA OTRO PARTIDO O INGRESE 'no' PARA APOSTAR: ")
+        while((respuesta.lower() != "si") and (respuesta.lower() != "no")):
+            respuesta = input("INGRESE NUEVAMENTE LA RESPUESTA: 'si' SI DESEA VER CUANTO PAGA OTRO PARTIDO O INGRESE 'no' PARA APOSTAR: ")
+
+    print("QUE EMPIECE EL JUEGO")
+    ganador = simular_partido()
+
+    leer_partido = int(input("PARA APOSTAR POR UN EQUIPO, INGRESE UN ID DEL FIXTURE: "))
+    while(leer_partido  not in fixtures):
+        leer_partido = int(input("PARA APOSTAR POR UN EQUIPO INGRESE NUEVAMENTE, INGRESE UN ID DEL FIXTURE: "))
+
+    apuesta = input("INGRESE SU APUESTA (GANADOR(L)/EMPATE/GANADOR(V)): ")
+    while(not validar_apuesta(apuesta)):
+        apuesta = input("INGRESE SU APUESTA (GANADOR(L)/EMPATE/GANADOR(V)): ")
+
+    monto_a_apostar = int(input("INGRESE EL MONTO A APOSTAR: "))
+    if(not validar_monto(id_usuario, usuarios, monto_a_apostar)):
+        print("\n")
+        mostrar_ganador(ganador) 
+        if apuesta == ganador:
+            print("¡FELICIDADES! ES UN GANADOR")
+            importe = importe_apuesta(leer_partido, fixtures, cant_pago_x_apuestas, ganador, monto_a_apostar)
+            print(f"POR LA APUESTA GANADA SE LE HIZO UN PAGO DE ${importe} A SU DINERO DISPONIBLE")
+            aumento_importe(id_usuario, usuarios, importe, monto_a_apostar) 
+            resultado = "Gana"
+        else:
+            importe = (-monto_a_apostar) 
+            print(f"PERDIO Y SE LE DESCONTO ${monto_a_apostar} DE SU DINERO DISPONIBLE")
+            disminucion_importe(id_usuario, usuarios, importe)
+            resultado = "Pierde"
+    else:
+        print(f"LO SENTIMOS  NO PUEDE APOSTAR") 
+
+    if(int(importe) != 0):
+        linea.append(id_usuario)
+        fecha = fixtures[leer_partido][2]
+        linea.append(fecha)  
+        linea.append(resultado) 
+        linea.append(importe)
+
+        transacciones.append(linea)
+
+        cantidad_apostada_hasta_el_momento(id_usuario, usuarios, monto_a_apostar)
+        fecha_ultima_apuesta(id_usuario, usuarios, fecha)
+                
 
 def seleccionar_opcion():
     menu()
@@ -578,11 +1148,21 @@ def seleccionar_opcion():
 def main():
     print("BIENVENIDOS AL PORTAL DE APUESTAS JUGARSELAS.\n")
     usuarios = cargar_usuarios(ARCHIVO)
+    if(usuarios == -1):
+        print("LO SENTIMOS!! NO SE PUEDE REALIZAR EL JUEGO PORQUE EL ARCHIVO DE USUARIOS NO EXISTE")
+        return None
+    
+    transacciones = cargar_transacciones(ARCHIVO2)
     id_usuario, contrasenia = pedir_busqueda()
     registrado = registrar_usuario(id_usuario, contrasenia, usuarios)
+
+    guardar_usuario(usuarios, ARCHIVO)
+    usuarios = cargar_usuarios(ARCHIVO)
+
     if(registrado):
         print("ACONTINUACION SE LE MOSTRARA UN MENU DE OPCIONES PARA EL USO DE SU CUENTA. ")
         opcion = seleccionar_opcion()		
+
         while opcion != 'i': 
             if opcion == 'a':
                 opcion_2()                     
@@ -596,8 +1176,17 @@ def main():
                 leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
                 opcion_6(id_usuario, leer_dinero, ARCHIVO, usuarios) 
             elif opcion == 'f':
-                opcion_7(ARCHIVO, usuarios)     
+                opcion_7(ARCHIVO, usuarios)
+            elif opcion == 'g':
+                opcion_8(transacciones, usuarios)
+            elif opcion == 'h':
+                opcion_9(usuarios, id_usuario, transacciones)
+
+            guardar_transacciones(transacciones, ARCHIVO2)
+
             opcion = seleccionar_opcion()
-        guardar_usuario(ARCHIVO,usuarios)
+
+        guardar_usuario(usuarios, ARCHIVO)
+
 main()
 
