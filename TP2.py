@@ -45,7 +45,7 @@ def cargar_usuarios(archivo):
     directorio = os.getcwd()
     ruta_del_archivo = os.path.join(directorio, archivo)
     if not os.path.exists(ruta_del_archivo):
-        return usuarios
+        return -1
     with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
         csv_reader = csv.reader(archivo_csv, delimiter=',')
         encabezado = next(csv_reader)
@@ -736,20 +736,17 @@ def opcion_8(transacciones:list, usuarios:list):
     if(len(transacciones) == 0):
         print("AUN NO HAY GANADORES")
                 
-def lee_informacion(url):
-
-    conn = http.client.HTTPSConnection("v3.football.api-sports.io")
-
+def lee_informacion(url1):
+    url= f"https://v3.football.api-sports.io{url1}"
+    payload = {}
     headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "4f195fbb113f91fc46340162f872b960"
-        }
+            'x-rapidapi-host': "v3.football.api-sports.io",
+            'x-rapidapi-key': "4f195fbb113f91fc46340162f872b960"
+            }
+    response = requests.request("GET", url, headers=headers)
+    stri_json = response.text
+    data= json.loads(stri_json)
 
-    conn.request("GET", url, headers=headers)
-
-    res = conn.getresponse()
-    data = res.read()
-    data = json.loads(data.decode("utf-8"))
     return data
 
 def cargando_equipos():
@@ -759,8 +756,8 @@ def cargando_equipos():
     POSTCONDICION: devolvera un diccionario con los equipos
 
     """
-    url = ("/teams?league=128&season=2023")
-    data = lee_informacion(url)
+    url1 = ("/teams?league=128&season=2023")
+    data = lee_informacion(url1)
   
     equipos = {}
     cantidad_equipos = data['results']
@@ -806,8 +803,8 @@ def cargar_fixture(leer_equipo):
 
     """
     fixtures = {}
-    url =  (f"/fixtures?league=128&season=2023&team={leer_equipo}")
-    data = lee_informacion(url)
+    url1 =  (f"/fixtures?league=128&season=2023&team={leer_equipo}")
+    data = lee_informacion(url1)
 
 
     cantidad_fixture = data['results']
@@ -852,8 +849,8 @@ def importe_apuesta(id_fixture:int, fixtures:dict, cant_pago_x_apuestas:int, gan
     POSTCONDICION: devuelve un numero positivo, resultado de lo que paga por fixture
 
     """
-    url = (f"/predictions?fixture={id_fixture}")
-    data = lee_informacion(url)
+    url1 = (f"/predictions?fixture={id_fixture}")
+    data = lee_informacion(url1)
 
     w_o_d = (data['response'][0]['predictions']['win_or_draw'])
 
@@ -902,8 +899,8 @@ def mostrar_pago_x_equipo(id_fixture:int, fixtures:dict, cant_pago_x_apuestas:in
     POSTCONDICION: mostrara informacion de lo que se paga en caso de ganar o empatar
 
     """
-    url = (f"/predictions?fixture={id_fixture}")
-    data = lee_informacion(url)
+    url1 = (f"/predictions?fixture={id_fixture}")
+    data = lee_informacion(url1)
 
     w_o_d = (data['response'][0]['predictions']['win_or_draw'])
     ganador_x_api = (data['response'][0]['predictions']['winner']['name'])
@@ -1027,29 +1024,18 @@ def mostrar_ganador(equipo_ganador:str)->None:
     else:
         print("EL PARTIDO TERMINO EN UN EMPATE")
 
-def aumento_importe(id_usuario:str, usuarios:list, importe:int, monto_a_apostar:int): 
+def modificacion_importe(id_usuario:str, usuarios:list, importe:int,): 
     """
     
     PRECONDICION: 
-    POSTCONDICION: aumenta su dinero disponible y lo muestra por pantalla
+    POSTCONDICION: modifica su dinero disponible y lo muestra por pantalla
     
     """
     for fila in usuarios:
         if(id_usuario == fila[0]):
-            fila[5] = str(int(float(fila[5])) - int(monto_a_apostar) + (int(importe))) 
+            fila[5] = str(int(float(fila[5])) + (int(importe))) 
             print(f"SU DINERO DISPONIBLE ES {fila[5]}")
 
-def disminucion_importe(id_usuario:str, usuarios:list, importe):
-    """
-    
-    PRECONDICION: 
-    POSTCONDICION: disminuye su dinero disponible y lo muestra por pantalla
-    
-    """
-    for fila in usuarios:
-        if(id_usuario == fila[0]):
-            fila[5] = str(int(float(fila[5])) + int(importe))
-            print(f"SU DINERO DISPONIBLE ES {fila[5]}")
 
 def validar_apuesta(apuesta):
     """
@@ -1111,12 +1097,12 @@ def opcion_9(usuarios, id_usuario, transacciones):
             print("¡FELICIDADES! ES UN GANADOR")
             importe = importe_apuesta(leer_partido, fixtures, cant_pago_x_apuestas, ganador, monto_a_apostar)
             print(f"POR LA APUESTA GANADA SE LE HIZO UN PAGO DE ${importe} A SU DINERO DISPONIBLE")
-            aumento_importe(id_usuario, usuarios, importe, monto_a_apostar) 
+            modificacion_importe(id_usuario, usuarios, importe) 
             resultado = "Gana"
         else:
             importe = (-monto_a_apostar) 
             print(f"PERDIO Y SE LE DESCONTO ${monto_a_apostar} DE SU DINERO DISPONIBLE")
-            disminucion_importe(id_usuario, usuarios, importe)
+            modificacion_importe(id_usuario, usuarios, importe)
             resultado = "Pierde"
     else:
         print(f"LO SENTIMOS  NO PUEDE APOSTAR") 
@@ -1174,9 +1160,9 @@ def main():
                 opcion_5()                     
             elif opcion == 'e':
                 leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
-                opcion_6(id_usuario, leer_dinero, ARCHIVO, usuarios) 
+                opcion_6(id_usuario, leer_dinero,usuarios,transacciones) 
             elif opcion == 'f':
-                opcion_7(ARCHIVO, usuarios)
+                opcion_7(usuarios)
             elif opcion == 'g':
                 opcion_8(transacciones, usuarios)
             elif opcion == 'h':
