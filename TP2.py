@@ -33,6 +33,9 @@ TIRADA_DADO_MAX = 4
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
 
+def numero_invalido(numero: str):
+    return numero.isnumeric()
+
 def cargar_usuarios(archivo):
     """
 
@@ -1064,9 +1067,11 @@ def opcion_9(usuarios, id_usuario, transacciones):
     print("DE LA LIGA PROFESIONAL CORRESPONDIENTE A LA TEMPORADA 2023 CON SUS RESPECTIVOS 'ID' ")
     equipos = cargando_equipos()
     mostrar_equipos_id(equipos)
+    
     leer_equipo = input("INGRESE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
-    while(int(leer_equipo)  not in equipos):
+    while not numero_invalido(leer_equipo) or (int(leer_equipo) not in equipos):
         leer_equipo = input("INGRESE NUEVAMENTE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
+    leer_equipo = int(leer_equipo)
 
     fixtures = cargar_fixture(leer_equipo)
     mostrar_fixtures(fixtures)
@@ -1074,7 +1079,12 @@ def opcion_9(usuarios, id_usuario, transacciones):
     respuesta = "si"
 
     while respuesta.lower() == "si":
-        id_fixture = int(input("INGRESE EL ID DEL FIXTURE PARA MOSTRARLE LO QUE PAGA: "))
+        
+        id_fixture = input("INGRESE EL ID DEL FIXTURE PARA MOSTRARLE LO QUE PAGA: ")
+        while not numero_invalido(id_fixture) or (int(id_fixture)  not in fixtures):
+            id_fixture = input("PARA APOSTAR POR UN EQUIPO INGRESE NUEVAMENTE, INGRESE UN ID DEL FIXTURE: ")
+        id_fixture = int(id_fixture)
+
         cant_pago_x_apuestas = mostrar_pago_x_equipo(id_fixture, fixtures)
         respuesta = input("INGRESE 'si' SI DESEA VER CUANTO PAGA OTRO PARTIDO O INGRESE 'no' PARA APOSTAR: ")
         while((respuesta.lower() != "si") and (respuesta.lower() != "no")):
@@ -1084,9 +1094,10 @@ def opcion_9(usuarios, id_usuario, transacciones):
     fecha=cargar_fecha_actual()
     ganador = simular_partido()
 
-    leer_partido = int(input("PARA APOSTAR POR UN EQUIPO, INGRESE UN ID DEL FIXTURE: "))
-    while(leer_partido  not in fixtures):
-        leer_partido = int(input("PARA APOSTAR POR UN EQUIPO INGRESE NUEVAMENTE, INGRESE UN ID DEL FIXTURE: "))
+    leer_partido = input("PARA APOSTAR POR UN EQUIPO, INGRESE UN ID DEL FIXTURE: ")
+    while not numero_invalido(leer_partido) or (int(leer_partido)  not in fixtures):
+        leer_partido = input("PARA APOSTAR POR UN EQUIPO INGRESE NUEVAMENTE, INGRESE UN ID DEL FIXTURE: ")
+    leer_partido = int(leer_partido)
 
     apuesta = input("INGRESE SU APUESTA (GANADOR(L)/EMPATE/GANADOR(V)): ")
     while(not validar_apuesta(apuesta)):
