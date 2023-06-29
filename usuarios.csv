@@ -1,2 +1,4 @@
 "ID","Nombre Usuario","Contraseña","Cantidad Apostada","Fecha Ultima Apuesta","Dinero Disponible"
-
+"pepe","pepe","$pbkdf2-sha256$29000$HYPQek9JiRFizFmrVQrhXA$r6zxCUseQGEXUjU7urXYAR7TH0Tsx7Z/l4Sfq/72dfY","0","0000/00/00","0"
+"ivan","ivan","$pbkdf2-sha256$29000$hXDOGYOw1vr/X6vVem.t9Q$52dB62xs9xrG8J7/BoA1McpFtYKsuZY4vqipU8m5KOU","0","0000/00/00","0"
+"peep","pepe","$pbkdf2-sha256$29000$3DunFGLMOYewlpKSEqI0Bg$co/bj/.KB2R7kXDqG3cF0wHRJKiUPmoueMdJratclSQ","0","0000/00/00","0"
