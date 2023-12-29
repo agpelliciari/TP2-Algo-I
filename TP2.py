@@ -27,9 +27,6 @@ TIRADA_DADO_MIN = 1
 TIRADA_DADO_MAX = 4
 
 
-
-
-
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
 
