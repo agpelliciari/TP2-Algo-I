@@ -40,17 +40,16 @@ def cargar_usuarios(archivo):
     POSTCONDICION: Devuelve una lista en caso de que el archivo no este vacio, de lo contrario devolvera -1
     
     """
-
     usuarios = []
-    directorio = os.getcwd()
-    ruta_del_archivo = os.path.join(directorio, archivo)
-    if not os.path.exists(ruta_del_archivo):
+    try:
+        with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)
+            for row in csv_reader:
+                usuarios.append(row)
+    except FileNotFoundError:
+        print("El archivo no existe")
         return -1
-    with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
-        csv_reader = csv.reader(archivo_csv, delimiter=',')
-        encabezado = next(csv_reader)
-        for row in csv_reader:
-            usuarios.append(row)
 
     return usuarios
 
@@ -60,18 +59,18 @@ def cargar_transacciones(archivo):
     PRECONDICION: Se recibe un archivo.csv
     POSTCONDICION: Devuelve una lista en caso de que el archivo no este vacio, de lo contrario devolvera -1
     
-    """
-        
+    """    
     transacciones = []
-    directorio = os.getcwd()
-    ruta_del_archivo = os.path.join(directorio, archivo)
-    if not os.path.exists(ruta_del_archivo):
-        return transacciones 
-    with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
-        csv_reader = csv.reader(archivo_csv, delimiter=',')
-        encabezado = next(csv_reader)
-        for row in csv_reader:
-            transacciones.append(row)
+    
+    try:
+        with open(archivo, newline='', encoding="UTF-8") as archivo_csv:
+            csv_reader = csv.reader(archivo_csv, delimiter=',')
+            next(csv_reader)
+            for row in csv_reader:
+                transacciones.append(row)
+    except FileNotFoundError:
+        print("El archivo no existe")
+        return -1
                     
     return transacciones
 
@@ -1142,11 +1141,11 @@ def seleccionar_opcion():
 
 
 def main():
-    print("BIENVENIDOS AL PORTAL DE APUESTAS JUGARSELAS.\n")
+    print("INICIANDO APLICACION...\n")
     usuarios = cargar_usuarios(ARCHIVO)
     if(usuarios == -1):
-        print("LO SENTIMOS!! NO SE PUEDE REALIZAR EL JUEGO PORQUE EL ARCHIVO DE USUARIOS NO EXISTE")
-        return None
+        print("CERRANDO APLICACION...")
+        return 0
     
     transacciones = cargar_transacciones(ARCHIVO2)
     id_usuario, contrasenia = pedir_busqueda()
