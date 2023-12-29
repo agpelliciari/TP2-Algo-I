@@ -107,17 +107,25 @@ def buscar(id_usuario, usuarios, contrasenia):
     POSTCONDICION: Devolvera un numero dependiendo si estan o no en la lista usuarios, 1: registrado, 3: no registrado, 2: si la contraseña es incorrecta
     
     """
-
     buscado = NO_REGISTRADO
+    encontrado = -1
+    i = 0
+    
+    while((encontrado != 0) and (i < len(usuarios))):
 
-    for fila in usuarios:
-        if(len(fila) > 0):
-            if((id_usuario == fila[0]) and (pbkdf2_sha256.verify(contrasenia, fila[2]))):
-                buscado = REGISTRADO
-            else:
-                if(id_usuario == fila[0]): 
-                    buscado = CONTRASENIA_INCORRECTA
-		
+        fila = usuarios[i]
+
+        if((id_usuario == fila[0]) and (pbkdf2_sha256.verify(contrasenia, fila[2]))):
+            buscado = REGISTRADO
+            encontrado = 0
+
+        elif(id_usuario == fila[0]): 
+            buscado = CONTRASENIA_INCORRECTA
+            encontrado = 0
+        
+        else:
+            i += 1
+	
     return buscado
 
 def registrar_usuario(id_usuario, contrasenia, usuarios):
@@ -1148,7 +1156,9 @@ def main():
         return 0
     
     transacciones = cargar_transacciones(ARCHIVO2)
-    id_usuario, contrasenia = pedir_busqueda()
+    #id_usuario, contrasenia = pedir_busqueda()
+    id_usuario = "agustinpelliciari@gmail.com"
+    contrasenia = "iverplate"
     registrado = registrar_usuario(id_usuario, contrasenia, usuarios)
 
     guardar_usuario(usuarios, ARCHIVO)
