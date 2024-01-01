@@ -33,7 +33,7 @@ def valor_invalido(valor, valores_validos):
 def numero_invalido(numero: str):
     return numero.isnumeric()
 
-def cargar_usuarios(archivo):
+def cargar_archivo_usuarios(archivo):
     """
 
     PRECONDICION: Se recibe un archivo.csv
@@ -182,7 +182,7 @@ def registrar_usuario(id_usuario, contrasenia, usuarios):
 
     return registrado
 
-def guardar_usuario(usuarios, archivo):
+def guardar_archivo_usuarios(usuarios, archivo):
     """
 
     PRECONDICION: Se recibe una lista de usuarios cargada
@@ -198,15 +198,15 @@ def guardar_usuario(usuarios, archivo):
 def menu():
 
     print("---------------MENU DE OPCIONES-----------------------------")
-    print("(a) SE LE MUESTRA EL PLANTEL COMPLETO DE TODOS LOS EQUIPOS DE LPF ARGENTINA 2023")
-    print("(b) SE LE MUESTRA LA TABLA DE POSICIONES DEL AÑO QUE ELIJA DE LPF ARGENTINA")
-    print("(c) SE LE MUESTRA INFORMACION ACERCA DEL ESTADIO Y ESCUDO DE UN EQUIPO ELEGIDO")
-    print("(d) SE LE MUESTRA UN GRAFICO DE LOS GOLES POR MINUTO DE UN EQUIPO ELEGIDO")
-    print("(e) PERMITIR CARGAR DINERO EN SU CUENTA.")
-    print("(f) SE LE MUESTRA EL USUARIO QUE MAS APOSTO HASTA EL MOMENTO")
-    print("(g) SE LE MUESTRA EL USUARIO QUE MAS GANO HASTA EL MOMENTO")
-    print("(h) APOSTAR")
-    print("(i) SALIR DEL PROGRAMA")
+    print("(1) SE LE MUESTRA EL PLANTEL COMPLETO DE TODOS LOS EQUIPOS DE LPF ARGENTINA 2023")
+    print("(2) SE LE MUESTRA LA TABLA DE POSICIONES DEL AÑO QUE ELIJA DE LPF ARGENTINA")
+    print("(3) SE LE MUESTRA INFORMACION ACERCA DEL ESTADIO Y ESCUDO DE UN EQUIPO ELEGIDO")
+    print("(4) SE LE MUESTRA UN GRAFICO DE LOS GOLES POR MINUTO DE UN EQUIPO ELEGIDO")
+    print("(5) PERMITIR CARGAR DINERO EN SU CUENTA.")
+    print("(6) SE LE MUESTRA EL USUARIO QUE MAS APOSTO HASTA EL MOMENTO")
+    print("(7) SE LE MUESTRA EL USUARIO QUE MAS GANO HASTA EL MOMENTO")
+    print("(8) APOSTAR")
+    print("(9) SALIR DEL PROGRAMA")
 
 def Imprimir_equipos_de_la_liga():
     """
@@ -1142,7 +1142,7 @@ def seleccionar_opcion():
 
     opcion = input("Ingrese una opcion: ")
 
-    while valor_invalido(opcion, ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']):
+    while valor_invalido(opcion, ['1', '2', '3', '4', '5', '6', '7', '8', '9']):
         opcion = input(f"La opcion {opcion} es invalida. Por favor, seleccione una opcion valida: ")
 
     return opcion
@@ -1150,7 +1150,7 @@ def seleccionar_opcion():
 
 def main():
     print("INICIANDO APLICACION...\n")
-    usuarios = cargar_usuarios(ARCHIVO)
+    usuarios = cargar_archivo_usuarios(ARCHIVO)
     if(usuarios == -1):
         print("CERRANDO APLICACION...")
         return 0
@@ -1158,40 +1158,37 @@ def main():
     transacciones = cargar_transacciones(ARCHIVO2)
     #id_usuario, contrasenia = pedir_busqueda()
     id_usuario = "agustinpelliciari@gmail.com"
-    contrasenia = "iverplate"
+    contrasenia = "Riverplate"
     registrado = registrar_usuario(id_usuario, contrasenia, usuarios)
-
-    guardar_usuario(usuarios, ARCHIVO)
-    usuarios = cargar_usuarios(ARCHIVO)
 
     if(registrado):
         print("ACONTINUACION SE LE MOSTRARA UN MENU DE OPCIONES PARA EL USO DE SU CUENTA. ")
         opcion = seleccionar_opcion()		
 
-        while opcion != 'i': 
-            if opcion == 'a':
+        while opcion != '9': 
+            if opcion == '1':
                 opcion_2()                     
-            elif opcion == 'b':
+            elif opcion == '2':
                 opcion_3()                     
-            elif opcion == 'c':
+            elif opcion == '3':
                 opcion_4()                     
-            elif opcion == 'd':
+            elif opcion == '4':
                 opcion_5()                     
-            elif opcion == 'e':
+            elif opcion == '5':
                 leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
                 opcion_6(id_usuario, leer_dinero,usuarios,transacciones) 
-            elif opcion == 'f':
+            elif opcion == '6':
                 opcion_7(usuarios)
-            elif opcion == 'g':
+            elif opcion == '7':
                 opcion_8(transacciones, usuarios)
-            elif opcion == 'h':
+            elif opcion == '8':
                 opcion_9(usuarios, id_usuario, transacciones)
 
             guardar_transacciones(transacciones, ARCHIVO2)
 
             opcion = seleccionar_opcion()
 
-        guardar_usuario(usuarios, ARCHIVO)
+        guardar_archivo_usuarios(usuarios, ARCHIVO)
 
 main()
 
