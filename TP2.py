@@ -53,7 +53,7 @@ def cargar_archivo_usuarios(archivo):
 
     return usuarios
 
-def cargar_transacciones(archivo):
+def cargar_archivo_transacciones(archivo):
     """
     
     PRECONDICION: Se recibe un archivo.csv
@@ -202,7 +202,7 @@ def menu():
     print("(2) SE LE MUESTRA LA TABLA DE POSICIONES DEL AÑO QUE ELIJA DE LPF ARGENTINA")
     print("(3) SE LE MUESTRA INFORMACION ACERCA DEL ESTADIO Y ESCUDO DE UN EQUIPO ELEGIDO")
     print("(4) SE LE MUESTRA UN GRAFICO DE LOS GOLES POR MINUTO DE UN EQUIPO ELEGIDO")
-    print("(5) PERMITIR CARGAR DINERO EN SU CUENTA.")
+    print("(5) INGRESAR DINERO EN SU CUENTA")
     print("(6) SE LE MUESTRA EL USUARIO QUE MAS APOSTO HASTA EL MOMENTO")
     print("(7) SE LE MUESTRA EL USUARIO QUE MAS GANO HASTA EL MOMENTO")
     print("(8) APOSTAR")
@@ -234,7 +234,7 @@ def Imprimir_equipos_de_la_liga():
                 print(response[team]["name"]) 
     return diccionario_equipos_y_id
 
-def opcion_2():
+def imprimir_plantel_equipo_seleccionado():
     """
 
     PRECONDICION: Pide al usuario un equipo y pide a la API los jugadores que pertenecen a ese equipo.
@@ -287,7 +287,7 @@ def obtener_diccionario_tablas(anio):
     stri_json = response.text                    
     diccionario_tablas = json.loads(stri_json)         # Pasar de Json a python
     return diccionario_tablas
-def opcion_3():
+def imprimir_tabla_anio_seleccionado():
     """
 
     PRECONDICION: Pide al usuario que ingrese una temporada para consultar la tabla de posiciones.
@@ -547,7 +547,7 @@ def obtener_diccionario_equipos():
 
     return diccionario_equipos
 
-def opcion_4():
+def mostrar_escudo_estadio_equipo_seleccionado():
     """
     PRECONDICION: Pide al usuario que elija un equipo de la lista.
     POSTCONDICION: Muestra los datos del estadio y el escudo de ese equipo.
@@ -608,7 +608,7 @@ def mostrar_equipos(datos_equipos:dict):
         print(f"{contador}) {equipo}")
 
 
-def opcion_5()->None:
+def mostrar_grafico_goles_equipo_seleccionado()->None:
     """
 
     PRECONDICION: Pide al usuario un equipo y pide a la API los goles de toda la temporada de ese equipo.
@@ -646,51 +646,63 @@ def opcion_5()->None:
     axs.bar(names,values)
     fig.suptitle('Goles por Minutos Jugados')
     plt.show()
-
-def validar_fecha(fecha_str):
-    """
- 
-    PRECONDICION: Se recibe una fecha en cadena con formato YYYY-MM-DD
-    POSTCONDICION: Devuelve true si es la fecha es igual a la fecha actual de lo contrario devuelve false
- 
-    """
-    try:
-        datetime.strptime(fecha_str, '%Y-%m-%d')
-        return True
-    except ValueError:
-        return False
+    
 def cargar_fecha_actual():
-    fecha_actaul=datetime.now()
-    fecha_actaul1=datetime.strftime(fecha_actaul,'%Y-%m-%d')
-    fecha = input("Ingrese la fecha actual en formato YYYY-MM-DD: ")
-    while not validar_fecha(fecha) or fecha != fecha_actaul1:
-        print("Fecha no válida. Intente nuevamente.")
-        fecha = input("Ingrese la  fecha  actual en formato YYYY-MM-DD: ")
+    fecha_actual = datetime.now()
+    fecha = datetime.strftime(fecha_actual,'%Y-%m-%d')
+    
     return fecha
-def opcion_6(id_usuario:str, leer_dinero:int, usuarios:list, transacciones:list)->list:
+
+def cargar_dinero_ingresado():
+    dinero_ingresado = input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): ")
+    while not numero_invalido(dinero_ingresado):
+        dinero_ingresado = input("VALOR INVALIDO. VUELVA A INGRESAR CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): ")
+    dinero_ingresado = int(dinero_ingresado)
+
+    return dinero_ingresado
+
+def cargar_transaccion(dinero_ingresado:int, fecha_actual:str, id_usuario:str, usuarios:list):
+    linea = []
+    encontrado = -1
+    i = 0
+    
+    while((encontrado != 0) and (i < len(usuarios))):
+
+        fila = usuarios[i]
+
+        if(id_usuario == fila[0]):
+
+            fila[5] = str(int(fila[5]) + dinero_ingresado)
+            print("SE AGREGO DINERO A SU CUENTA CON EXITO")
+            print(f"SU DINERO DISPONIBLE HASTA EL MOMENTO ES {fila[5]}")
+            tipo_resultado = "deposita" 
+            importe = dinero_ingresado
+
+            linea.append(id_usuario)
+            linea.append(fecha_actual)
+            linea.append(tipo_resultado)
+            linea.append(str(importe))
+            
+            encontrado = 0
+
+        else:
+            i += 1
+    
+    return linea
+
+def ingresar_dinero_cuenta_usuario(id_usuario:str, usuarios:list, transacciones:list)->list:
     """
     PRECONDICION: 
     POSTCONDICION: Se cargara una lista con campos validos a la lista transacciones
     """
-    linea = []
-    fecha= cargar_fecha_actual()
+    valor_ingresado = cargar_dinero_ingresado()
+    fecha = cargar_fecha_actual()
 
-    for fila in usuarios:
+    transaccion = cargar_transaccion(valor_ingresado, fecha, id_usuario, usuarios)
 
-        if(id_usuario == fila[0]):
-            fila[5] = str(int(fila[5]) + leer_dinero)
-            print("SE AGREGO DINERO A SU CUENTA CON EXITO")
-            print(f"SU DINERO DISPONIBLE HASTA EL MOMENTO ES {fila[5]}")
-            tipo_resultado = "deposita" 
-            importe = leer_dinero
+    transacciones.append(transaccion)
 
-            linea.append(id_usuario)
-            linea.append(fecha)
-            linea.append(tipo_resultado)
-            linea.append(importe)
-    transacciones.append(linea)
-
-def opcion_7(usuarios:list)->None:
+def mostrar_usuario_mas_apostador(usuarios:list)->None:
     """
      
     PRECONDICION: Se recibe una lista con datos validos
@@ -709,7 +721,7 @@ def opcion_7(usuarios:list)->None:
                 print(f"EL USUARIO {fila[1]} CON LA CANTIDAD DE ${max_apostado} ES EL QUE MAS DINERO APOSTO HASTA EL MOMENTO")
 
 
-def opcion_8(transacciones:list, usuarios:list):
+def mostrar_usuario_mas_ganador(transacciones:list, usuarios:list):
     """
     
     PRECONDICION: 
@@ -971,7 +983,7 @@ def simular_partido():
             ganador = "GANADOR(V)"
     return ganador
 
-def guardar_transacciones(transacciones:list, archivo2):
+def guardar_archivo_transacciones(transacciones:list, archivo2):
     """
     
     PRECONDICION: recibe por parametro una lista
@@ -1059,7 +1071,7 @@ def validar_apuesta(apuesta):
         apuesta_valida = True
     return apuesta_valida
             
-def opcion_9(usuarios, id_usuario, transacciones):
+def apostar(usuarios, id_usuario, transacciones):
     """
 
     PRECONDICION: se recibe el id_usuario como una cadena valida, una lista de usuarios y una lista de transacciones
@@ -1155,36 +1167,36 @@ def main():
         print("CERRANDO APLICACION...")
         return 0
     
-    transacciones = cargar_transacciones(ARCHIVO2)
+    transacciones = cargar_archivo_transacciones(ARCHIVO2)
     #id_usuario, contrasenia = pedir_busqueda()
     id_usuario = "agustinpelliciari@gmail.com"
     contrasenia = "Riverplate"
     registrado = registrar_usuario(id_usuario, contrasenia, usuarios)
 
     if(registrado):
-        print("ACONTINUACION SE LE MOSTRARA UN MENU DE OPCIONES PARA EL USO DE SU CUENTA. ")
+
         opcion = seleccionar_opcion()		
 
-        while opcion != '9': 
-            if opcion == '1':
-                opcion_2()                     
-            elif opcion == '2':
-                opcion_3()                     
-            elif opcion == '3':
-                opcion_4()                     
-            elif opcion == '4':
-                opcion_5()                     
-            elif opcion == '5':
-                leer_dinero = int(input("CUANTO DINERO DESEA CARGAR (INGRESAR SOLO EL NUMERO): "))
-                opcion_6(id_usuario, leer_dinero,usuarios,transacciones) 
-            elif opcion == '6':
-                opcion_7(usuarios)
-            elif opcion == '7':
-                opcion_8(transacciones, usuarios)
-            elif opcion == '8':
-                opcion_9(usuarios, id_usuario, transacciones)
+        while opcion != '9':
 
-            guardar_transacciones(transacciones, ARCHIVO2)
+            if opcion == '1':
+                imprimir_plantel_equipo_seleccionado()                     
+            elif opcion == '2':
+                imprimir_tabla_anio_seleccionado()                     
+            elif opcion == '3':
+                mostrar_escudo_estadio_equipo_seleccionado()                     
+            elif opcion == '4':
+                mostrar_grafico_goles_equipo_seleccionado()                     
+            elif opcion == '5':
+                ingresar_dinero_cuenta_usuario(id_usuario, usuarios, transacciones) 
+            elif opcion == '6':
+                mostrar_usuario_mas_apostador(usuarios)
+            elif opcion == '7':
+                mostrar_usuario_mas_ganador(transacciones, usuarios)
+            elif opcion == '8':
+                apostar(usuarios, id_usuario, transacciones)
+
+            guardar_archivo_transacciones(transacciones, ARCHIVO2)
 
             opcion = seleccionar_opcion()
 
