@@ -28,9 +28,12 @@ TIRADA_DADO_MIN = 1
 TIRADA_DADO_MAX = 4
 
 ID_USUARIO = 0
+NOMBRE_USUARIO = 1
 CANTIDAD_APOSTADA = 3
 ULTIMA_APUESTA = 4
 DINERO_DISPONIBLE = 5
+
+RESULTADO = 2
 
 DEPOSITAR = 'deposita'
 GANA_APUESTA = 'gana'
@@ -736,58 +739,54 @@ def ingresar_dinero_cuenta_usuario(id_usuario:str, usuarios:list, transacciones:
 
 def mostrar_usuario_mas_apostador(usuarios:list)->None:
     """
-     
     PRECONDICION: Se recibe una lista con datos validos
     POSTCONDICION: Se muestra por pantalla el usuario que mas dinero aposto
     
     """
     max_apostado = -1
+
     for fila in usuarios:
-        if(int(fila[3]) > max_apostado):
-            max_apostado = int(fila[3])
+        if(int(fila[CANTIDAD_APOSTADA]) > max_apostado):
+            max_apostado = int(fila[CANTIDAD_APOSTADA])
+            usuario_max_apostador = fila[ID_USUARIO]
+    
     if(max_apostado == 0):
         print("NO HAY INFORMACION, PORQUE AUN NADIE APOSTO")
-    elif(max_apostado > 0):
-        for fila in usuarios:
-            if(int(fila[3]) == max_apostado):
-                print(f"EL USUARIO {fila[1]} CON LA CANTIDAD DE ${max_apostado} ES EL QUE MAS DINERO APOSTO HASTA EL MOMENTO")
 
+    elif(max_apostado > 0):
+        print(f"EL USUARIO {usuario_max_apostador} CON LA CANTIDAD DE ${max_apostado} ES EL QUE MAS DINERO APOSTO")
 
 def mostrar_usuario_mas_ganador(transacciones:list, usuarios:list):
     """
-    
     PRECONDICION: 
     POSTCONDICION: se mostrara informacion del usuario que mas veces gano
     
     """
-    apuestas_usuarios = {}
-    acumulador_veces_ganadas = 1
-    mayor_cant_veces_ganadas = 0
-    id_usuario_mayor_cant_veces_ganadas = "x"
-
+    cantidad_veces_ganadas = {}
+    max_cantidad_veces_ganadas = -1
+    
     for fila in transacciones:
-        if(len(fila) > 0):
-            if((fila[2] == "Pierde") or (fila[2] == "deposita")):
-                print("AUN NO HAY GANADORES")
+        nombre_usuario = fila[ID_USUARIO]
+        resultado = fila[RESULTADO]
+
+        if(resultado == GANA_APUESTA):
+            if(nombre_usuario not in cantidad_veces_ganadas):
+                cantidad_veces_ganadas[nombre_usuario] = 1
             else:
-                if((fila[2] == "Gana") and (fila[0] not in apuestas_usuarios)):
-                    apuestas_usuarios[fila[0]] = [acumulador_veces_ganadas]
-                else:
-                    if((fila[2] == "Gana") and (fila[0] in apuestas_usuarios)):
-                        apuestas_usuarios[fila[0]] = [int(" ".join(map(str,apuestas_usuarios[fila[0]]))) + acumulador_veces_ganadas]
+                cantidad_veces_ganadas[nombre_usuario] += 1
+    
+    if(cantidad_veces_ganadas == {}):
+        print(f"TODAVIA NO GANO NINGUN USUARIO APOSTANDO")
 
-    for usuario in apuestas_usuarios:
-        str_apuestas = (" ".join(map(str, apuestas_usuarios[usuario])))
-        if(int(str_apuestas) > mayor_cant_veces_ganadas):
-            mayor_cant_veces_ganadas = int(str_apuestas)
-            id_usuario_mayor_cant_veces_ganadas = usuario
-
-    for fila in usuarios:
-        if(fila[0] == id_usuario_mayor_cant_veces_ganadas):
-            print(f"EL USUARIO QUE MAS VECES APOSTO HASTA EL MOMENTO ES {fila[1]} CON LA CANTIDAD DE {mayor_cant_veces_ganadas} APUESTAS")
-
-    if(len(transacciones) == 0):
-        print("AUN NO HAY GANADORES")
+    else:
+        for nombre_usuario in cantidad_veces_ganadas:
+            valor = cantidad_veces_ganadas[nombre_usuario]
+            
+            if(valor > max_cantidad_veces_ganadas):
+                mas_ganador = nombre_usuario
+                max_cantidad_veces_ganadas = valor
+        
+        print(f"EL USUARIO QUE MAS VECES GANO APOSTANDO ES {mas_ganador}, HABIENDO GANADO {max_cantidad_veces_ganadas} APUESTAS")
                 
 def lee_informacion(url1):
     url= f"https://v3.football.api-sports.io{url1}"
@@ -822,7 +821,6 @@ def cargar_equipos():
         equipos[id_equipo] = nombre_equipo
     
     return equipos
-
 
 def mostrar_equipos_id(equipos:dict):
     """
@@ -1154,7 +1152,7 @@ def apostar(usuarios, id_usuario, transacciones):
 
     if not monto_excedido(id_usuario, usuarios, dinero_apostado):
         print("\n")
-        
+
         mostrar_ganador(resultado_simulado) 
 
         if (resultado_apostado == resultado_simulado):
