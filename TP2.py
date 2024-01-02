@@ -26,6 +26,8 @@ PAGO_APUESTA_MAX = 5
 TIRADA_DADO_MIN = 1
 TIRADA_DADO_MAX = 4
 
+ID_USUARIO = 0
+DINERO_DISPONIBLE = 5
 
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
@@ -670,11 +672,11 @@ def cargar_transaccion(dinero_ingresado:int, fecha_actual:str, id_usuario:str, u
 
         fila = usuarios[i]
 
-        if(id_usuario == fila[0]):
+        if(id_usuario == fila[ID_USUARIO]):
 
-            fila[5] = str(int(fila[5]) + dinero_ingresado)
+            fila[DINERO_DISPONIBLE] = str(int(fila[DINERO_DISPONIBLE]) + dinero_ingresado)
             print("SE AGREGO DINERO A SU CUENTA CON EXITO")
-            print(f"SU DINERO DISPONIBLE HASTA EL MOMENTO ES {fila[5]}")
+            print(f"SU DINERO DISPONIBLE HASTA EL MOMENTO ES {fila[DINERO_DISPONIBLE]}")
             tipo_resultado = "deposita" 
             importe = dinero_ingresado
 
