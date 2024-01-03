@@ -43,6 +43,11 @@ NOMBRE_EQUIPO = 0
 ESCUDO_EQUIPO = 1
 ESTADIO_EQUIPO = 2
 
+ARQUERO = 'Goalkeeper'
+DEFENSOR = 'Defender'
+MEDIOCAMPISTA = 'Midfielder'
+DELANTERO = 'Attacker'
+
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
 
@@ -272,6 +277,21 @@ def Imprimir_equipos_de_la_liga():
                 print(response[team]["name"]) 
     return diccionario_equipos_y_id
 
+def traducir_posicion(posicion):
+    if (posicion == ARQUERO):
+        nueva_posicion = 'Arquero'
+
+    elif (posicion == DEFENSOR):
+        nueva_posicion = 'Defensor'
+
+    elif (posicion == MEDIOCAMPISTA):
+        nueva_posicion = 'Mediocampista'
+
+    elif (posicion == DELANTERO):
+        nueva_posicion = 'Delantero'
+    
+    return nueva_posicion
+
 def imprimir_plantel_equipo_seleccionado():
     """
 
@@ -279,31 +299,30 @@ def imprimir_plantel_equipo_seleccionado():
     POSTCONDICION: Muestra un listado del plantel del equipo ingresado por el usuario.
 
     """
-    diccionario_equipos_y_id=Imprimir_equipos_de_la_liga()
-    equipo_ingresado_por_usuario= input('Ingrese el nombre del equipo para ver su plantel:  ').capitalize()
+    equipos = cargar_equipos()
+    mostrar_equipos_id(equipos)
+    id_equipo_seleccionado = validar_equipo_ingresado(equipos)
+
+    numero_pagina = 1
+
+    while(numero_pagina <= 3):
+        url = (f"/players?league=128&season=2023&team={id_equipo_seleccionado}&page={numero_pagina}")
+        data_plantel_equipo_seleccionado = lee_informacion(url)
+        
+        jugadores = data_plantel_equipo_seleccionado['response']
+        
+        for jugador in jugadores:
+            nombre = jugador['player']['firstname']
+            apellido = jugador['player']['lastname']
+            edad = jugador['player']['age']
+            posicion = traducir_posicion(jugador['statistics'][0]['games']['position'])
+        
+            print(f"- {nombre} {apellido}, {posicion} de {edad} años")
+
+        numero_pagina += 1
+
+    print("\n")
     
-    while equipo_ingresado_por_usuario not in diccionario_equipos_y_id:
-        print('Ese equipo no esta en esta liga o no existe: ')
-        equipo_ingresado_por_usuario= input('Ingrese el nombre del equipo para ver su plantel:  ').capitalize()
-    id_equipo=diccionario_equipos_y_id[equipo_ingresado_por_usuario]
-    
-    url = f"https://v3.football.api-sports.io/players?league=128&season=2023&team={id_equipo}"
-
-    payload = {}
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
-        }
-
-    response_2 = requests.request("GET", url, headers=headers)
-
-    stri_json_2 = response_2.text
-    diccionario_jugadores = json.loads(stri_json_2)
-    for response_2 in diccionario_jugadores["response"]:
-        for player  in response_2:
-            if player == "player":
-                print('-',response_2[player]["firstname"],response_2[player]["lastname"])
-
 def ingresar_anio():
     anio = input("Ingrese una temporada (2015-2023) para consultar su tabla de posiciones: ")
     while valor_invalido(anio, ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023']) :
@@ -340,6 +359,8 @@ def imprimir_tabla_anio_seleccionado():
 
     elif (anio == 2023):        
         mostrar_tabla_veinti_tres(anio, datos_liga)
+
+    print("\n")
 
 def mostrar_tabla_quince_to_diecinueve(posiciones:dict):
 
@@ -567,6 +588,8 @@ def mostrar_escudo_estadio_equipo_seleccionado():
     mostrar_datos_estadio(datos_equipo_elegido)
 
     mostrar_escudo(datos_equipo_elegido)
+
+    print("\n")
 
 def mostrar_datos_estadio(datos_equipo_elegido):
    
