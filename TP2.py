@@ -251,32 +251,6 @@ def seleccionar_opcion():
 
     return opcion
 
-def Imprimir_equipos_de_la_liga():
-    """
-
-    PRECONDICION: Pide a la API los equipos de la liga Argentina de la temporada 2023
-    POSTCONDICION: Y luego imprime en un listado a los equipos que la conforman y crea un diccionario que tiene 
-                    como clave a los equipos con sus respectivos id. 
-
-    """
-    url= "https://v3.football.api-sports.io/teams?league=128&season=2023"
-    payload = {}
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
-        }
-    response = requests.request("GET", url, headers=headers)
-    stri_json = response.text
-    diccionario_equipos = json.loads(stri_json)
-    print('LOS EQUIPOS QUE CONFORMAN LA LIGA PROFESIONAL SON:')
-    diccionario_equipos_y_id={}
-    for response in diccionario_equipos["response"]:
-        for team in response :
-            if team == "team":
-                diccionario_equipos_y_id[(response[team]["name"]).capitalize()]=response[team]["id"]
-                print(response[team]["name"]) 
-    return diccionario_equipos_y_id
-
 def traducir_posicion(posicion):
     if (posicion == ARQUERO):
         nueva_posicion = 'Arquero'
@@ -620,33 +594,24 @@ def mostrar_grafico_goles_equipo_seleccionado()->None:
     POSTCONDICION: Muestra en un grafico todos los goles que hizo el equipo en toda la temporada  divididos por minutos.
 
     """      
-    diccionario_equipos_y_id=Imprimir_equipos_de_la_liga()
-    equipo_ingresado_por_usuario=input('Elija el equipo  al cual que desea verle los goles de la temporada: ').capitalize()
-    while equipo_ingresado_por_usuario not in diccionario_equipos_y_id:
-        print('Ese equipo no esta en esta liga o no existe: ')
-        equipo_ingresado_por_usuario=input('Elija el equipo  al cual que desea verle los goles de la temporada: ').capitalize()
-    id_equipo=diccionario_equipos_y_id[equipo_ingresado_por_usuario]
-    
-    url = f"https://v3.football.api-sports.io/teams/statistics?league=128&season=2023&team={id_equipo}"
+    equipos = cargar_equipos()
+    mostrar_equipos_id(equipos)
+    id_equipo_seleccionado = validar_equipo_ingresado(equipos)
 
-    payload = {}    
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
-            }
+    url = (f"/teams/statistics?league=128&season=2023&team={id_equipo_seleccionado}")
+    data_equipo_seleccionado = lee_informacion(url)
     
-    response = requests.request("GET", url, headers=headers)
-    str_json= response.text
-    diccionario_goles_y_minutos= json.loads(str_json)
-    data={}
-    for minute in diccionario_goles_y_minutos["response"]["goals"]["for"]:
-        if minute=="minute":
-            for minutes in diccionario_goles_y_minutos["response"]["goals"]["for"][minute]:
-                data[minutes]= diccionario_goles_y_minutos["response"]["goals"]["for"][minute][minutes]["total"]
-                if data[minutes]== None:
-                    data[minutes]=0
-    names=list(data.keys())
-    values=list(data.values())
+    goles_x_minutos = data_equipo_seleccionado["response"]["goals"]["for"]["minute"]
+    
+    data = {}
+
+    for minuto in goles_x_minutos:
+        data[minuto] = goles_x_minutos[minuto]["total"]
+        if data[minuto] == None:
+            data[minuto] = 0
+
+    names = list(data.keys())
+    values = list(data.values())
     fig, axs = plt.subplots(1, 1, figsize=(9, 3), sharey=True)
     axs.bar(names,values)
     fig.suptitle('Goles por Minutos Jugados')
