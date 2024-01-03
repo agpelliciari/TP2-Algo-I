@@ -304,27 +304,14 @@ def imprimir_plantel_equipo_seleccionado():
             if player == "player":
                 print('-',response_2[player]["firstname"],response_2[player]["lastname"])
 
-def obtener_diccionario_tablas(anio):
-    """
+def ingresar_anio():
+    anio = input("Ingrese una temporada (2015-2023) para consultar su tabla de posiciones: ")
+    while valor_invalido(anio, ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023']) :
+        anio = input("La temporada ingresada es invalida. Ingrese nuevamente la temporada: ")
+    anio = int(anio)
 
-    PRECONDICION: Solicita a la API info. sobre la temporada elegida por el usuario.
-    POSTCONDICION: Devuelve un diccionario con la info. sobre la temporada elegida por el usuario.
+    return anio
 
-    """
-
-    url = f"https://v3.football.api-sports.io/standings?league=128&season={anio}"
-
-    payload = {}
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
-        }
-
-    response = requests.request("GET", url, headers=headers, data=payload)
-
-    stri_json = response.text                    
-    diccionario_tablas = json.loads(stri_json)         # Pasar de Json a python
-    return diccionario_tablas
 def imprimir_tabla_anio_seleccionado():
     """
 
@@ -333,27 +320,28 @@ def imprimir_tabla_anio_seleccionado():
 
     """
 
-    anio = input("Ingrese una temporada (2015-2023) para consultar su tabla de posiciones: ")
-    while valor_invalido(anio, ['2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023']) :
-        anio = input("La temporada ingresada es invalida. Ingrese nuevamente la temporada: ")
-    anio = int(anio)
+    anio = ingresar_anio()
 
-    diccionario_tablas = obtener_diccionario_tablas(anio)
+    url = (f"/standings?league=128&season={anio}")
+    data_liga_anio_ingresado = lee_informacion(url)
 
-    datos_liga = diccionario_tablas['response'][0] 
+    datos_liga = data_liga_anio_ingresado['response'][0] 
     posiciones = datos_liga['league']['standings'][0]
 
     print(f"----Tabla de posiciones LPF Argentina {anio}")
     if (anio == 2015) or (anio == 2016) or (anio == 2017) or (anio == 2018) or (anio == 2019): 
-        mostrar_tabla_quince_to_diecinueve(anio, posiciones)
+        mostrar_tabla_quince_to_diecinueve(posiciones)
+
     elif (anio == 2020): 
-        mostrar_tabla_veinte(anio, datos_liga)
+        mostrar_tabla_veinte(datos_liga)
+
     elif (anio == 2021) or (anio == 2022):
-        mostrar_tabla_veinti_uno_dos(anio, datos_liga)
+        mostrar_tabla_veinti_uno_dos(datos_liga)
+
     elif (anio == 2023):        
         mostrar_tabla_veinti_tres(anio, datos_liga)
 
-def mostrar_tabla_quince_to_diecinueve(anio:int, posiciones:dict):
+def mostrar_tabla_quince_to_diecinueve(posiciones:dict):
 
     for i in posiciones:            
             puesto = i['rank']
@@ -366,7 +354,7 @@ def mostrar_tabla_quince_to_diecinueve(anio:int, posiciones:dict):
 
             print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
 
-def mostrar_tabla_veinti_uno_dos(anio:int, datos_liga:dict):
+def mostrar_tabla_veinti_uno_dos(datos_liga:dict):
 
     posiciones_mostrar_primera_fase = datos_liga['league']['standings'][1]
     posiciones_segunda_fase = datos_liga['league']['standings'][0]
@@ -397,7 +385,7 @@ def mostrar_tabla_veinti_uno_dos(anio:int, datos_liga:dict):
 
 def mostrar_tabla_veinti_tres(anio:int, datos_liga:dict):
 
-    posiciones_mostrar_primera_fase = datos_liga['league']['standings'][1]
+    posiciones_mostrar_primera_fase = datos_liga['league']['standings'][0]
     for i in posiciones_mostrar_primera_fase:
         puesto = i['rank']
         equipo = i['team']['name']
@@ -411,7 +399,7 @@ def mostrar_tabla_veinti_tres(anio:int, datos_liga:dict):
     print()
     print(f"La segunda fase de la temporada {anio} todavia no se jugo.")
 
-def mostrar_tabla_veinte(anio: int, datos_liga:dict):
+def mostrar_tabla_veinte(datos_liga:dict):
     grupo_uno = datos_liga['league']['standings'][4]
     grupo_dos = datos_liga['league']['standings'][5]
     grupo_tres = datos_liga['league']['standings'][6]
