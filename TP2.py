@@ -39,6 +39,10 @@ DEPOSITAR = 'deposita'
 GANA_APUESTA = 'gana'
 PIERDE_APUESTA = 'pierde'
 
+NOMBRE_EQUIPO = 0
+ESCUDO_EQUIPO = 1
+ESTADIO_EQUIPO = 2
+
 def valor_invalido(valor, valores_validos):
     return valor not in valores_validos
 
@@ -557,59 +561,28 @@ def mostrar_segunda_fase(grupo_a_ganadores:list, grupo_b_ganadores:list, grupo_a
 
         print(f"{puesto}) {equipo}: {puntos} puntos. En {jugados} partidos obtuvo {ganados} victorias, {perdidos} derrotas y {empatados} empates")
 
-
-def obtener_diccionario_equipos():
-    """ 
-
-    PRECONDICION: Solicita a la API info. de los equipos que participan de la LPF 2023.
-    POSTCONDICION: Devuelve un diccionario con la info. de los equipos que participan de la LPF 2023.
-
-    """
-
-    url = "https://v3.football.api-sports.io/teams?league=128&season=2023"
-
-    payload = {}
-    headers = {
-        'x-rapidapi-host': "v3.football.api-sports.io",
-        'x-rapidapi-key': "c347da80012545f47dd7ac448d329d83"
-        }
-    
-    response = requests.request("GET", url, headers=headers, data=payload)
-
-    stri_json = response.text
-    diccionario_equipos = json.loads(stri_json)  # Pasar de json a dicc de python
-
-    return diccionario_equipos
-
 def mostrar_escudo_estadio_equipo_seleccionado():
     """
     PRECONDICION: Pide al usuario que elija un equipo de la lista.
     POSTCONDICION: Muestra los datos del estadio y el escudo de ese equipo.
 
     """ 
-    diccionario_equipos = obtener_diccionario_equipos()
+    datos_equipos = cargar_equipos()
+    mostrar_equipos_id(datos_equipos)
+    id_equipo_elegido = validar_equipo_ingresado(datos_equipos)
 
-    datos_equipos = diccionario_equipos['response']
-
-    mostrar_equipos(datos_equipos)
-
-    eleccion = input("Elija un equipo del listado de equipos: ")
-    while valor_invalido(eleccion, ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28']) :
-        eleccion = input("La eleccion ingresada es invalida. Ingrese nuevamente la eleccion del equipo: ")
-    eleccion = int(eleccion)
-
-    choice = datos_equipos[eleccion - 1]
-    nombre = choice['team']['name']
+    datos_equipo_elegido = datos_equipos[id_equipo_elegido]
+    nombre_equipo_elegido = datos_equipo_elegido[NOMBRE_EQUIPO]
     print()
-    print(nombre)
+    print(nombre_equipo_elegido)
 
-    mostrar_datos_estadio(choice)
+    mostrar_datos_estadio(datos_equipo_elegido)
 
-    mostrar_escudo(choice)
+    mostrar_escudo(datos_equipo_elegido)
 
-def mostrar_datos_estadio(choice:dict):
+def mostrar_datos_estadio(datos_equipo_elegido):
    
-    datos_estadio = choice['venue']
+    datos_estadio = datos_equipo_elegido[ESTADIO_EQUIPO]
     nombre = datos_estadio['name']
     direccion = datos_estadio['address']
     ciudad = datos_estadio['city']
@@ -622,25 +595,12 @@ def mostrar_datos_estadio(choice:dict):
    
     print(f"El {nombre} esta ubicado en la calle {direccion} de la ciudad de {ciudad}. Tiene una capacidad para {capacidad} personas.")
 
-def mostrar_escudo(choice:dict):
+def mostrar_escudo(datos_equipo_elegido):
 
-    escudo = choice['team']['logo']
+    escudo = datos_equipo_elegido[ESCUDO_EQUIPO]
     response = requests.get(escudo)
     img = Image.open(BytesIO(response.content))
     img.show()
-
-def mostrar_equipos(datos_equipos:dict):
-
-    print("---Estos son los equipos que participan en la temporada 2023 de LPF Argentina.")
-
-    contador = 0
-
-    for i in datos_equipos:
-        contador +=1
-        equipo = i['team']['name']
-
-        print(f"{contador}) {equipo}")
-
 
 def mostrar_grafico_goles_equipo_seleccionado()->None:
     """
@@ -817,8 +777,10 @@ def cargar_equipos():
     for resultado in range(cantidad_equipos):
         nombre_equipo = (data['response'][resultado]['team']['name'])
         id_equipo = (data['response'][resultado]['team']['id'])
+        escudo = (data['response'][resultado]['team']['logo'])
+        datos_estadio = (data['response'][resultado]['venue'])
 
-        equipos[id_equipo] = nombre_equipo
+        equipos[id_equipo] = nombre_equipo, escudo, datos_estadio
     
     return equipos
 
@@ -830,7 +792,8 @@ def mostrar_equipos_id(equipos:dict):
 
     """
     print("EQUIPOS LIGA PROFESIONAL DE FUTBOL 2023")
-    for id_equipo, nombre_equipo in equipos.items():
+    for id_equipo in equipos:
+        nombre_equipo = equipos[id_equipo][NOMBRE_EQUIPO]
         print(f"ID {id_equipo} - {nombre_equipo} ")
 
 def jugada(local_o_visitante):
@@ -1085,9 +1048,9 @@ def modificar_dinero_disponible(id_usuario:str, usuarios:list, importe:int,):
             i += 1
             
 def validar_equipo_ingresado(equipos:dict):
-    equipo_ingresado = input("INGRESE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
+    equipo_ingresado = input("INGRESE EL ID DEL EQUIPO: ")
     while not numero_invalido(equipo_ingresado) or (int(equipo_ingresado) not in equipos):
-        equipo_ingresado = input("INGRESE NUEVAMENTE EL ID DEL EQUIPO PARA OBTENER INFORMACION DEL FIXTURE: ")
+        equipo_ingresado = input("INGRESE NUEVAMENTE EL ID DEL EQUIPO: ")
     equipo_ingresado = int(equipo_ingresado)
 
     return equipo_ingresado
