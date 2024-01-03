@@ -29,6 +29,7 @@ TIRADA_DADO_MAX = 4
 
 ID_USUARIO = 0
 NOMBRE_USUARIO = 1
+CONTRASENIA = 2
 CANTIDAD_APOSTADA = 3
 ULTIMA_APUESTA = 4
 DINERO_DISPONIBLE = 5
@@ -145,7 +146,6 @@ def encriptacion(contrasenia):
 
     return hash
 
-
 def buscar(id_usuario, usuarios, contrasenia):
     """
      
@@ -161,11 +161,11 @@ def buscar(id_usuario, usuarios, contrasenia):
 
         fila = usuarios[i]
 
-        if((id_usuario == fila[0]) and (pbkdf2_sha256.verify(contrasenia, fila[2]))):
+        if((id_usuario == fila[ID_USUARIO]) and (pbkdf2_sha256.verify(contrasenia, fila[CONTRASENIA]))):
             buscado = REGISTRADO
             encontrado = 0
 
-        elif(id_usuario == fila[0]): 
+        elif(id_usuario == fila[ID_USUARIO]): 
             buscado = CONTRASENIA_INCORRECTA
             encontrado = 0
         
@@ -214,7 +214,7 @@ def registrar_usuario(id_usuario, contrasenia, usuarios):
                 return None
 
             cantidad_apostada = "0"
-            fecha_apostada = "0000/00/00"
+            fecha_apostada = "0000-00-00"
             dinero_disponible = "0"
 
             nombre_usuario = input("INGRESE SU NOMBRE COMPLETO: ")
@@ -1129,9 +1129,7 @@ def main():
         return 0
     
     transacciones = cargar_archivo_transacciones(ARCHIVO2)
-    #id_usuario, contrasenia = pedir_busqueda()
-    id_usuario = "agustinpelliciari@gmail.com"
-    contrasenia = "Riverplate"
+    id_usuario, contrasenia = pedir_busqueda()
     registrado = registrar_usuario(id_usuario, contrasenia, usuarios)
 
     if(registrado):
